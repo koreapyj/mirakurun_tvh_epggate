@@ -1,0 +1,27 @@
+{
+  "name": "mirakurun_tvh_epggate",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/koreapyj/mirakurun_tvh_epggate#readme",
+  "bugs": {
+    "url": "https://github.com/koreapyj/mirakurun_tvh_epggate/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koreapyj/mirakurun_tvh_epggate.git"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "koreapyj",
+  "type": "module",
+  "main": "src/app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "node --env-file .env src/app.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0"
+  },
+  "dependencies": {
+    "html-entities": "^2.6.0"
+  }
+}

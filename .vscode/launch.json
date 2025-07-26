@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "프로그램 시작",
+            "runtimeArgs": [
+                "--env-file",
+                ".env",
+                "src/app.ts"
+            ],
+            "outputCapture": "std"
+        }
+    ]
+}
