@@ -19,11 +19,6 @@ if(!TVHEADEND_ENDPOINT) {
     process.exit(1);
 }
 
-if(!TVHEADEND_XMLTV) {
-    console.error('TVHEADEND_XMLTV is not defined');
-    process.exit(1);
-}
-
 if(!MIRAKURUN_ENDPOINT) {
     console.error('MIRAKURUN_ENDPOINT is not defined');
     process.exit(1);
