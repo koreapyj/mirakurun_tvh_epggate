@@ -24,7 +24,12 @@ if(!MIRAKURUN_ENDPOINT) {
     process.exit(1);
 }
 
-const XMLTV = TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout;
+const XMLTV = (stream=>({
+    write: chunk => new Promise(resolve => {
+        stream.write(chunk, 'utf8', resolve);
+    }),
+    destroy: () => stream.destroy(),
+}))(TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout);
 
 (async () => {
     const out_channels: any[] = [];
@@ -46,14 +51,14 @@ const XMLTV = TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout;
     }
 
     const mirakurun_services = await (await fetch(new URL('/api/services', MIRAKURUN_ENDPOINT))).json();
-    XMLTV.write(`<?xml version="1.0" encoding="utf-8" ?>\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n<tv generator-info-name="mirakurun_tvh_epggate" source-info-name="mirakurun_tvh_epggate">\n`);
+    await XMLTV.write(`<?xml version="1.0" encoding="utf-8" ?>\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n<tv generator-info-name="mirakurun_tvh_epggate" source-info-name="mirakurun_tvh_epggate">\n`);
     for(const service of mirakurun_services) {
         const tvh_service = tvh_service_by_mirakurun_id[service.id];
         if(!tvh_service) {
             console.error(`tvh service not found for '${service.id}'`);
             continue;
         }
-        XMLTV.write(`<channel id="${tvh_service.uuid}"><display-name>${ftoh(service.name)}</display-name><display-name>${service.channel.channel}</display-name><display-name>${tvh_service.svcname}</display-name></channel>\n`);
+        await XMLTV.write(`<channel id="${tvh_service.uuid}"><display-name>${ftoh(service.name)}</display-name><display-name>${service.channel.channel}</display-name><display-name>${tvh_service.svcname}</display-name></channel>\n`);
     }
 
     const programs = await (await fetch(new URL('/api/programs', MIRAKURUN_ENDPOINT))).json();
@@ -84,9 +89,9 @@ const XMLTV = TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout;
             console.error(`unknown componentType '${program.video.componentType}'`);
             continue;
         }
-        XMLTV.write(`<programme start="${toXMLTVTime(new Date(program.startAt))}" stop="${toXMLTVTime(new Date(program.startAt + program.duration))}" channel="${service.uuid}">`);
-        XMLTV.write(`<title lang="ja">${encodeXMLTV(program.name)}</title>`);
-        XMLTV.write(`<sub-title lang="ja">${encodeXMLTV(program.description)}</sub-title>`);
+        await XMLTV.write(`<programme start="${toXMLTVTime(new Date(program.startAt))}" stop="${toXMLTVTime(new Date(program.startAt + program.duration))}" channel="${service.uuid}">`);
+        await XMLTV.write(`<title lang="ja">${encodeXMLTV(program.name)}</title>`);
+        await XMLTV.write(`<sub-title lang="ja">${encodeXMLTV(program.description)}</sub-title>`);
         if(program.genres) {
             const dvb_genres = {};
             const o_genres = {};
@@ -104,28 +109,32 @@ const XMLTV = TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout;
                     }
                 }
             }
-            Object.values(dvb_genres).forEach(x=>XMLTV.write(`<category>${encodeXMLTV(x as string)}</category>`));
-            Object.values(o_genres).forEach(x=>XMLTV.write(`<keyword lang="ja">${encodeXMLTV(x as string)}</keyword>`));
+            for(const x of Object.values(dvb_genres)) {
+                await XMLTV.write(`<category>${encodeXMLTV(x as string)}</category>`);
+            }
+            for(const x of Object.values(o_genres)) {
+                await XMLTV.write(`<keyword lang="ja">${encodeXMLTV(x as string)}</keyword>`);
+            }
         }
         if(program.extended) {
-            XMLTV.write(`<desc lang="ja">${encodeXMLTV(Object.entries(program.extended).map(([k,v])=>(`${k}\n${v}\n\n`)).join("\n"))}</desc>`)
+            await XMLTV.write(`<desc lang="ja">${encodeXMLTV(Object.entries(program.extended).map(([k,v])=>(`${k}\n${v}\n\n`)).join("\n"))}</desc>`)
         }
         if(program.video?.componentType) {
-            XMLTV.write(`<video>${Object.entries(ARIB.VideoComponentType[program.video.componentType]).reduce((str, row)=>`${str}<${row[0]}>${encodeXMLTV(row[1] as string)}</${row[0]}>`,'')}</video>`);
+            await XMLTV.write(`<video>${Object.entries(ARIB.VideoComponentType[program.video.componentType]).reduce((str, row)=>`${str}<${row[0]}>${encodeXMLTV(row[1] as string)}</${row[0]}>`,'')}</video>`);
         }
         if(program.name.includes('🈑')) {
-            XMLTV.write('<subtitles type="deaf-signed"/>');
+            await XMLTV.write('<subtitles type="deaf-signed"/>');
         }
         if(program.name.includes('🈖')) {
-            XMLTV.write('<audio-described />');
+            await XMLTV.write('<audio-described />');
         }
         if(program.name.includes('🈟︎')) {
-            XMLTV.write('<new />');
+            await XMLTV.write('<new />');
         }
-        XMLTV.write(`</programme>\n`);
+        await XMLTV.write(`</programme>\n`);
     }
 
-    XMLTV.write(`</tv>\n`);
+    await XMLTV.write(`</tv>\n`);
     console.error('done.')
 })().then(()=>{
     XMLTV.destroy();
