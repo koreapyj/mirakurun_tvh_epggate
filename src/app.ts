@@ -29,7 +29,7 @@ const XMLTV = TVHEADEND_XMLTV ? Net.connect(TVHEADEND_XMLTV) : process.stdout;
 (async () => {
     const out_channels: any[] = [];
 
-    const tvh_muxes: TVHMux[] = await (await fetch(new URL('/api/raw/export?class=dvb_mux', TVHEADEND_ENDPOINT))).json();
+    const tvh_muxes: TVHMux[] = await (await fetch(new URL('/api/raw/export?class=mpegts_mux', TVHEADEND_ENDPOINT))).json();
     const tvh_services: TVHService[] = await (await fetch(new URL('/api/raw/export?class=service', TVHEADEND_ENDPOINT))).json();
     const tvh_service_by_uuid: Record<string, TVHService> = tvh_services.reduce((obj, row) => {
         obj[row.uuid]=row;
