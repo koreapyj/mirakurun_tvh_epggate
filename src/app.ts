@@ -58,7 +58,7 @@ const XMLTV = (stream=>({
             console.error(`tvh service not found for '${service.id}'`);
             continue;
         }
-        await XMLTV.write(`<channel id="${tvh_service.uuid}"><display-name>${ftoh(service.name)}</display-name><display-name>${service.channel.channel}</display-name><display-name>${tvh_service.svcname}</display-name></channel>\n`);
+        await XMLTV.write(`<channel id="${service.id}"><display-name>${ftoh(service.name)}</display-name><display-name>${service.channel.channel}</display-name><display-name>${tvh_service.svcname}</display-name></channel>\n`);
     }
 
     const programs = await (await fetch(new URL('/api/programs', MIRAKURUN_ENDPOINT))).json();
@@ -89,7 +89,7 @@ const XMLTV = (stream=>({
             console.error(`unknown componentType '${program.video.componentType}'`);
             continue;
         }
-        await XMLTV.write(`<programme start="${toXMLTVTime(new Date(program.startAt))}" stop="${toXMLTVTime(new Date(program.startAt + program.duration))}" channel="${service.uuid}">`);
+        await XMLTV.write(`<programme start="${toXMLTVTime(new Date(program.startAt))}" stop="${toXMLTVTime(new Date(program.startAt + program.duration))}" channel="${mid}">`);
         await XMLTV.write(`<title lang="ja">${encodeXMLTV(program.name)}</title>`);
         await XMLTV.write(`<sub-title lang="ja">${encodeXMLTV(program.description)}</sub-title>`);
         if(program.genres) {
@@ -122,14 +122,16 @@ const XMLTV = (stream=>({
         if(program.video?.componentType) {
             await XMLTV.write(`<video>${Object.entries(ARIB.VideoComponentType[program.video.componentType]).reduce((str, row)=>`${str}<${row[0]}>${encodeXMLTV(row[1] as string)}</${row[0]}>`,'')}</video>`);
         }
-        if(program.name.includes('🈑')) {
-            await XMLTV.write('<subtitles type="deaf-signed"/>');
-        }
-        if(program.name.includes('🈖')) {
-            await XMLTV.write('<audio-described />');
-        }
-        if(program.name.includes('🈟︎')) {
-            await XMLTV.write('<new />');
+        if(program.name) {
+            if(program.name.includes('🈑')) {
+                await XMLTV.write('<subtitles type="deaf-signed"/>');
+            }
+            if(program.name.includes('🈖')) {
+                await XMLTV.write('<audio-described />');
+            }
+            if(program.name.includes('🈟︎')) {
+                await XMLTV.write('<new />');
+            }
         }
         await XMLTV.write(`</programme>\n`);
     }

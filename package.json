@@ -20,7 +20,7 @@
     "start": "node src/app.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.1.0"
+    "@types/node": "^24.12.4"
   },
   "dependencies": {
     "html-entities": "^2.6.0"
